@@ -1,0 +1,50 @@
+global $woocommerce;
+// check if cart is not empty
+if(!is_null($woocommerce->cart)) {
+
+    // set our flag to be false until we find a product in that category
+    $cat_check = false;
+
+    // check each cart item for our category
+    foreach ( $woocommerce->cart->get_cart() as $cart_item_key => $cart_item ) {
+                
+        $product = $cart_item['data'];
+        
+        // replace 'cat-slug-name' with your category's slug
+        if ( has_term( 'digital-products', 'product_cat', $product->id ) ) {
+            $cat_check = true;
+            // break because we only need one "true" to matter here
+            break;
+        }
+    }
+            
+    // if a product in the cart is in our category, do something
+    if ( $cat_check ) {
+        // we have the category, do what we want
+
+        add_action( 'woocommerce_review_order_before_submit', 'bbloomer_add_checkout_digital_policy', 9 );
+            
+        function bbloomer_add_checkout_digital_policy() {
+        
+        woocommerce_form_field( 'digital_policy', array(
+        'type'          => 'checkbox',
+        'class'         => array('form-row digital'),
+        'label_class'   => array('woocommerce-form__label woocommerce-form__label-for-checkbox checkbox'),
+        'input_class'   => array('woocommerce-form__input woocommerce-form__input-checkbox input-checkbox'),
+        'required'      => true,
+        'label'         => 'I\'ve read and accept the <a href="https://192.168.0.2/LegalDocs/digital-statement/">Digital Policy</a>',
+        )); 
+        
+        }
+        
+        // Show notice if customer does not tick
+            
+        add_action( 'woocommerce_checkout_process', 'bbloomer_not_approved_digital' );
+        
+        function bbloomer_not_approved_digital() {
+            if ( ! (int) isset( $_POST['digital_policy'] ) ) {
+                wc_add_notice( __( 'Please acknowledge the Digital Policy' ), 'error' );
+            }
+        }
+    }
+}
